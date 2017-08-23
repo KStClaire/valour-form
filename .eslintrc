@@ -1,0 +1,17 @@
+{
+  "parser": "babel-eslint",
+  "plugins": [
+    "react",
+    "babel"
+  ],
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true,
+      "destructuring": true,
+      "experimentalObjectRestSpread": true
+    }
+  },
+  "rules": {
+    "max-len": 0
+  }
+}

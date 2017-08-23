@@ -7,19 +7,6 @@ import { noop, includes, find } from 'lodash';
 const timer = 150;
 
 class ValourForm extends React.Component{
-    static propTypes = {
-        formName: PropTypes.string.isRequired,        
-        rules: PropTypes.object.isRequired,
-        children: PropTypes.node.isRequired,
-        handleFormSubmission: PropTypes.func,
-        preventDefaultSubmissionBehavior: PropTypes.bool,
-        setValidationTypeForForm: PropTypes.oneOf(['onBlur', 'onChange'])
-    }
-    static defaultProps = {
-        handleFormSubmission: noop,
-        preventDefaultSubmissionBehavior: false
-    }
-
     constructor(props) {
         super(props);
         this.mapChildren = this.mapChildren.bind(this); 
@@ -50,17 +37,21 @@ class ValourForm extends React.Component{
     }
 
     mapChildren() {
-        const { children, formName, setValidationTypeForForm } = this.props;            
-        const { validationsRun, requiredFields, formSubmissionAttempted, validationMessages } = this.state;
+        const { children, formName, formValidationType } = this.props;            
+        const { validationsRun, requiredFields, formSubmissionAttempted, validationMessages, formValues } = this.state;
 
          return React.Children.map(children, child => {
             const { name, validateOnChange, validateOnBlur } = child.props;
+
             let validationResult, isRequiredField, validateOnSubmit;
+            let fieldValue = formValues[name];
+            
             let foundRequiredField = find(requiredFields, field => field.fieldName === name);
             if (foundRequiredField) { isRequiredField = foundRequiredField.isRequired; }
+
             if (!validateOnChange && !validateOnBlur) { validateOnSubmit = true; }
 
-            if (!validateOnSubmit || formSubmissionAttempted || setValidationTypeForForm) {
+            if (!validateOnSubmit || formSubmissionAttempted || formValidationType) {
                 if (includes(validationsRun, name) || (isRequiredField && formSubmissionAttempted)) {
                     validationResult = valour.getResult(formName)[name];
                 }
@@ -73,8 +64,9 @@ class ValourForm extends React.Component{
             }
 
             return React.cloneElement(child, {
+                fieldValue,
                 validationResult,
-                setValidationTypeForForm,
+                formValidationType,
                 handleValidationResultChange: this.createValidationHandler(name, formName)
             });
         }) 
@@ -107,10 +99,8 @@ class ValourForm extends React.Component{
             if (isFormValid){
                 handleFormSubmission(formValues);
             }
-            else {
-                let validationMessages = valour.getResult(formName);
-                this.setState({ formSubmissionAttempted: true, validationMessages });
-            }
+            let validationMessages = valour.getResult(formName);
+            this.setState({ formSubmissionAttempted: true, validationMessages });
         }, timer);
     }
 
@@ -124,4 +114,24 @@ class ValourForm extends React.Component{
        );
     }
 }
+
+ValourForm.propTypes = {
+    /** The name of the form */
+    formName: PropTypes.string.isRequired,
+    /** All of the [valour](https://github.com/stevematney/valour) rules used to validate the form */
+    rules: PropTypes.object.isRequired,
+    children: PropTypes.node.isRequired,
+    /** The function to execute on a valid submit */
+    handleFormSubmission: PropTypes.func,
+    /** Prevents the page from refreshing on submit */
+    preventDefaultSubmissionBehavior: PropTypes.bool,
+    /** Sets the validation type for all inputs in the form */
+    formValidationType: PropTypes.oneOf(['onBlur', 'onChange'])
+};
+
+ValourForm.defaultProps = {
+    handleFormSubmission: noop,
+    preventDefaultSubmissionBehavior: false
+};
+
 export default ValourForm;
